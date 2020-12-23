@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rider_app/widgets/divider.dart';
 
@@ -18,29 +19,165 @@ class _MainPageState extends State<MainPage> {
   Completer<GoogleMapController> controllerGoogleMap = Completer();
   GoogleMapController newGoogleMapController;
 
+  GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Position currentPos;
+  var geoLocator = Geolocator();
+
+  double bottomPaddingOfMap = 0;
+
+  void locatePosition() async {
+    Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    currentPos = pos;
+    LatLng latLngPos = LatLng(pos.latitude, pos.longitude);
+
+    CameraPosition cameraPosition = CameraPosition(target: latLngPos, zoom: 14);
+    newGoogleMapController.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       appBar: AppBar(
         title: Text("MAIN PAGE"),
+      ),
+      drawer: Container(
+        color: Colors.white,
+        width: 255.0,
+        child: Drawer(
+          child: ListView(
+            children: [
+              // Drawer Header
+              Container(
+                height: 165.0,
+                child: DrawerHeader(
+                  decoration: BoxDecoration(color: Colors.white),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        "images/user_icon.png",
+                        height: 65.0,
+                        width: 65.0,
+                      ),
+                      SizedBox(
+                        width: 16.0,
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Profile Name",
+                            style: TextStyle(
+                                fontSize: 16.0, fontFamily: "Brand-Bold"),
+                          ),
+                          SizedBox(
+                            height: 6.0,
+                          ),
+                          Text("Visit Profile"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              DividerWidget(),
+
+              SizedBox(
+                height: 12.0,
+              ),
+
+              // Drawer Controller
+
+              ListTile(
+                leading: Icon(Icons.history),
+                title: Text(
+                  "History",
+                  style: TextStyle(fontSize: 15.0),
+                ),
+              ),
+
+              ListTile(
+                leading: Icon(Icons.person),
+                title: Text(
+                  "Visit Profile",
+                  style: TextStyle(fontSize: 15.0),
+                ),
+              ),
+
+              ListTile(
+                leading: Icon(Icons.info),
+                title: Text(
+                  "About",
+                  style: TextStyle(fontSize: 15.0),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
       body: Stack(
         children: [
           GoogleMap(
+            padding: EdgeInsets.only(bottom: bottomPaddingOfMap),
             mapType: MapType.normal,
             myLocationButtonEnabled: true,
             initialCameraPosition: pos,
+            myLocationEnabled: true,
+            zoomGesturesEnabled: true,
+            zoomControlsEnabled: true,
             onMapCreated: (GoogleMapController controller) {
               controllerGoogleMap.complete(controller);
               newGoogleMapController = controller;
+
+              setState(() {
+                bottomPaddingOfMap = 300.0;
+              });
+
+              locatePosition();
             },
           ),
+          Positioned(
+              top: 45.0,
+              left: 22.0,
+              child: GestureDetector(
+                onTap: () {
+                  scaffoldKey.currentState.openDrawer();
+                },
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22.0),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black,
+                              blurRadius: 6.0,
+                              spreadRadius: 0.5,
+                              offset: Offset(0.7, 0.7))
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.menu,
+                          color: Colors.black,
+                        ),
+                        radius: 20.0,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
           Positioned(
               left: 0.0,
               right: 0.0,
               bottom: 0.0,
               child: Container(
-                height: 320.0,
+                height: 300.0,
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
@@ -132,14 +269,10 @@ class _MainPageState extends State<MainPage> {
                       SizedBox(
                         height: 10.0,
                       ),
-
                       DividerWidget(),
-
                       SizedBox(
                         height: 16.0,
                       ),
-
-
                       Row(
                         children: [
                           Icon(
